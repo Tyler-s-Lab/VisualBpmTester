@@ -15,6 +15,8 @@ public:
 
 public:
 	bool openFromFile(const std::string& filename);
+	bool openFromMemory(const void* data, std::size_t sizeInBytes);
+	bool openFromStream(sf::InputStream& stream);
 
 	sf::Time getDuration() const;
 

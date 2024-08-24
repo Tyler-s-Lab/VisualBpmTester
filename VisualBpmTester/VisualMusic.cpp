@@ -31,6 +31,34 @@ bool VisualMusic::openFromFile(const std::string& filename) {
 	return true;
 }
 
+bool VisualMusic::openFromMemory(const void* data, std::size_t sizeInBytes) {
+	// First stop the music if it was already running
+	stop();
+
+	// Open the underlying sound file
+	if (!m_file.openFromMemory(data, sizeInBytes))
+		return false;
+
+	// Perform common initializations
+	initialize();
+
+	return true;
+}
+
+bool VisualMusic::openFromStream(sf::InputStream& stream) {
+	// First stop the music if it was already running
+	stop();
+
+	// Open the underlying sound file
+	if (!m_file.openFromStream(stream))
+		return false;
+
+	// Perform common initializations
+	initialize();
+
+	return true;
+}
+
 sf::Time VisualMusic::getDuration() const {
 	return m_file.getDuration();
 }

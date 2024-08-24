@@ -43,15 +43,22 @@ private:
 
 	sf::Time samplesToTime(uint64_t samples) const;
 
-	void pushOneChunk();
-
 private:
-	static constexpr sf::Uint64 samplecnt = 48000ull;
-
 	sf::InputSoundFile   m_file;     //!< The streamed music file
 	std::vector<int16_t> m_samples;  //!< Temporary buffer of samples
 	std::mutex           m_mutex;    //!< Mutex protecting the data
 	Span<sf::Uint64>     m_loopSpan; //!< Loop Range Specifier
 
-	sf::RectangleShape m_rectangle;
+public:
+	void setShowRange(bool followMusic, TimeSpan range = TimeSpan(sf::Time::Zero, sf::Time::Zero));
+
+protected:
+	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+
+	void computeSamples();
+
+private:
+	uint32_t m_pointsPerShape;
+	mutable sf::RectangleShape m_rectangle;
+	std::vector<uint8_t> m_sampleShapes;
 };

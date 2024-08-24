@@ -11,7 +11,9 @@ constexpr std::int32_t samplerate = 44100;// 22046; 44092; 88185; 176370;
 
 VisualMusic::VisualMusic() :
 	m_file(),
-	m_loopSpan(0, 0) {}
+	m_loopSpan(0, 0),
+	m_pointsPerShape(0),
+	m_rectangle(sf::Vector2f(1.0f, 1.0f)) {}
 
 VisualMusic::~VisualMusic() {
 	// We must stop before destroying the file
@@ -216,10 +218,6 @@ void VisualMusic::draw(sf::RenderTarget& target, sf::RenderStates states) const 
 	uint64_t center = timeToSamples(centerTime);
 	int64_t shapeid = center / samplesPerShape;
 
-	//float width = m_rectangle.getSize().x;
-	//float offset = width * (center % samplesPerShape) / samplesPerShape;
-	//m_rectangle.setOrigin(offset, 0.5f);
-	float width = 1.0f;
 	m_rectangle.setOrigin(0.5f, 0.5f);
 
 	int64_t left = shapeid - delta;
@@ -227,22 +225,22 @@ void VisualMusic::draw(sf::RenderTarget& target, sf::RenderStates states) const 
 
 	if (left < 0)
 		left = 0;
-	if ((uint64_t)right > m_sampleShapes.size())
-		right = (int64_t)m_sampleShapes.size();
+	if ((uint64_t)right >= m_sampleShapes.size())
+		right = (int64_t)m_sampleShapes.size() - 1;
 
 	m_rectangle.setPosition(0.0f, 0.0f);
 	m_rectangle.setScale(1.0f, m_sampleShapes[shapeid]);
 	target.draw(m_rectangle, states);
 
 	float move;
-	move = -width;
-	for (int64_t i = shapeid - 1; i >= left; --i, move -= width) {
+	move = -1.0f;
+	for (int64_t i = shapeid - 1; i >= left; --i, move -= 1.0f) {
 		m_rectangle.setPosition(move, 0.0f);
 		m_rectangle.setScale(1.0f, m_sampleShapes[i]);
 		target.draw(m_rectangle, states);
 	}
-	move = +width;
-	for (int64_t i = shapeid + 1; i <= right; ++i, move += width) {
+	move = +1.0f;
+	for (int64_t i = shapeid + 1; i <= right; ++i, move += 1.0f) {
 		m_rectangle.setPosition(move, 0.0f);
 		m_rectangle.setScale(1.0f, m_sampleShapes[i]);
 		target.draw(m_rectangle, states);
@@ -265,16 +263,6 @@ void VisualMusic::computeSamples() {
 	m_sampleShapes.resize(shapeCnt);
 	for (uint64_t i = 0; i < shapeCnt; ++i) {
 		uint64_t readcount = m_file.read(m_samples.data(), samplesPerShape);
-		/*uint16_t max = 0;
-		for (uint64_t j = 0; j < readcount; ++j) {
-			int16_t val = m_samples[j];
-			uint16_t abs = val < 0 ? -val : val;
-			if (abs > max)
-				max = abs;
-		}
-		if (max > 32767)
-			max = 32767;
-		m_sampleShapes[i] = static_cast<uint8_t>(max / 128);*/
 		double sum = 0.0;
 		for (uint64_t j = 0; j < readcount; ++j) {
 			sum += std::abs(m_samples[j]);
@@ -282,9 +270,6 @@ void VisualMusic::computeSamples() {
 		sum /= readcount * (32768.0 / 255.0);
 		m_sampleShapes[i] = static_cast<uint8_t>(sum);
 	}
-
-	//m_rectangle.setSize(sf::Vector2f(96.0f / getSampleRate() * m_pointsPerShape, 1.0f));
-	m_rectangle.setSize(sf::Vector2f(1.0f, 1.0f));
 
 	return m_file.seek(0);
 }

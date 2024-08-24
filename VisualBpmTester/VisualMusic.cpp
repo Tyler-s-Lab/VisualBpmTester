@@ -208,8 +208,9 @@ void VisualMusic::setShowRange(bool followMusic, TimeSpan range) {}
 
 void VisualMusic::draw(sf::RenderTarget& target, sf::RenderStates states) const {
 	uint32_t sampleRate = getSampleRate();
+	uint32_t channelCnt = getChannelCount();
 	uint32_t pointsPerShape = sampleRate / ShapesPerSec;
-	uint32_t samplesPerShape = pointsPerShape * getChannelCount();
+	uint32_t samplesPerShape = pointsPerShape * channelCnt;
 
 	uint32_t delta = sampleRate * 8;
 	delta = delta / samplesPerShape + ((delta % samplesPerShape) ? 1 : 0);
@@ -220,55 +221,71 @@ void VisualMusic::draw(sf::RenderTarget& target, sf::RenderStates states) const 
 
 	m_rectangle.setOrigin(0.5f, 0.5f);
 
-	int64_t left = shapeid - delta;
-	int64_t right = shapeid + delta;
+	float verticalCenterOffset = (channelCnt - 1) / 2.0f;
 
-	if (left < 0)
-		left = 0;
-	if ((uint64_t)right >= m_sampleShapes.size())
-		right = (int64_t)m_sampleShapes.size() - 1;
+	for (uint32_t i = 0; i < channelCnt; ++i) {
+		const std::vector<uint8_t>& sampleShapes = m_channelShapes[i];
+		if (shapeid < 0 || (uint64_t)shapeid >= sampleShapes.size())
+			continue;
 
-	m_rectangle.setPosition(0.0f, 0.0f);
-	m_rectangle.setScale(1.0f, m_sampleShapes[shapeid]);
-	target.draw(m_rectangle, states);
+		int64_t left = shapeid - delta;
+		int64_t right = shapeid + delta;
 
-	float move;
-	move = -1.0f;
-	for (int64_t i = shapeid - 1; i >= left; --i, move -= 1.0f) {
-		m_rectangle.setPosition(move, 0.0f);
-		m_rectangle.setScale(1.0f, m_sampleShapes[i]);
+		if (left < 0)
+			left = 0;
+		if ((uint64_t)right >= sampleShapes.size())
+			right = (int64_t)sampleShapes.size() - 1;
+
+		float vertical = (i - verticalCenterOffset) * 144.0f;
+
+		m_rectangle.setPosition(0.0f, vertical);
+		m_rectangle.setScale(1.0f, sampleShapes[shapeid]);
 		target.draw(m_rectangle, states);
-	}
-	move = +1.0f;
-	for (int64_t i = shapeid + 1; i <= right; ++i, move += 1.0f) {
-		m_rectangle.setPosition(move, 0.0f);
-		m_rectangle.setScale(1.0f, m_sampleShapes[i]);
-		target.draw(m_rectangle, states);
-	}
 
+		float move;
+		move = -1.0f;
+		for (int64_t i = shapeid - 1; i >= left; --i, move -= 1.0f) {
+			m_rectangle.setPosition(move, vertical);
+			m_rectangle.setScale(1.0f, sampleShapes[i]);
+			target.draw(m_rectangle, states);
+		}
+		move = +1.0f;
+		for (int64_t i = shapeid + 1; i <= right; ++i, move += 1.0f) {
+			m_rectangle.setPosition(move, vertical);
+			m_rectangle.setScale(1.0f, sampleShapes[i]);
+			target.draw(m_rectangle, states);
+		}
+	}
 	return;
 }
 
 void VisualMusic::computeSamples() {
 	m_file.seek(0);
 
-	sf::err() << "Channel Cnt: " << getChannelCount() << std::endl;
-	sf::err() << "Sample Rate: " << getSampleRate() << std::endl;
+	uint32_t sampleRate = getSampleRate();
+	uint32_t channelCnt = getChannelCount();
 
-	uint32_t pointsPerShape = getSampleRate() / ShapesPerSec;
-	uint32_t samplesPerShape = pointsPerShape * getChannelCount();
+	uint32_t pointsPerShape = sampleRate / ShapesPerSec;
+	uint32_t samplesPerShape = pointsPerShape * channelCnt;
 	uint64_t totalSampleCnt = m_file.getSampleCount();
 	uint64_t shapeCnt = totalSampleCnt / samplesPerShape + ((totalSampleCnt % samplesPerShape) ? 1 : 0);
 
-	m_sampleShapes.resize(shapeCnt);
+	m_channelShapes.resize(channelCnt);
+	for (uint32_t i = 0; i < channelCnt; ++i)
+		m_channelShapes[i].resize(shapeCnt);
+
+	std::vector<std::pair<float, uint32_t>> sums(channelCnt);
 	for (uint64_t i = 0; i < shapeCnt; ++i) {
 		uint64_t readcount = m_file.read(m_samples.data(), samplesPerShape);
-		double sum = 0.0;
+		std::fill(sums.begin(), sums.end(), std::make_pair(0.0f, 0));
 		for (uint64_t j = 0; j < readcount; ++j) {
-			sum += std::abs(m_samples[j]);
+			sums[j % channelCnt].first += std::abs(m_samples[j]);
+			sums[j % channelCnt].second++;
 		}
-		sum /= readcount * (32768.0 / 255.0);
-		m_sampleShapes[i] = static_cast<uint8_t>(sum);
+		for (uint32_t j = 0; j < channelCnt; ++j) {
+			sums[j].first /= sums[j].second * (32767.5f / 255.5f);
+			m_channelShapes[j][i] = static_cast<uint8_t>(sums[j].first);
+		}
 	}
 
 	return m_file.seek(0);

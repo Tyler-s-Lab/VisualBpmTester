@@ -9,24 +9,27 @@ int main() {
 		sf::Style::Titlebar | sf::Style::Close,
 		sf::ContextSettings(0u, 0u, 4u)
 	);
-	window.setVerticalSyncEnabled(true);
+	//window.setVerticalSyncEnabled(true);
+	window.setFramerateLimit(60);
 
 	sf::RectangleShape playingline;
 	playingline.setFillColor(sf::Color::Red);
 	playingline.setSize(sf::Vector2f(1.0f, 1.0f));
 	playingline.setOrigin(0.5f, 0.5f);
-	playingline.setScale(1.0f, 512.0f);
+	playingline.setScale(1.0f, 1024.0f);
 
 	sf::RenderStates states;
 	states.transform.translate(320.5f, 240.5f);
-	states.transform.scale(1.0f, 2.0f);
+	//states.transform.scale(1.0f, 1.5f);
 
 	VisualMusic music;
 
-	music.openFromFile("../../The Fear.mp3");
-	//music.openFromFile("../../test.mp3");
+	//music.openFromFile("../../The Fear.mp3");
+	music.openFromFile("../../test.mp3");
 	//music.openFromFile("D:\\ProgramData\\CloudMusic_Download\\潘めぐみ,藤田咲,田辺留依 - シカ色デイズ.mp3");
 	//music.openFromFile("D:\\ProgramData\\CloudMusic_Download\\Mitchie M,初音ミク - FREELY TOMORROW.flac");
+
+	music.setPlayingOffset(sf::seconds(220.0f));
 
 	music.play();
 

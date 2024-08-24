@@ -58,7 +58,7 @@ protected:
 	void computeSamples();
 
 private:
-	static constexpr uint32_t ShapesPerSec = 96 * 4;
+	static constexpr uint32_t ShapesPerSec = 96;
 	mutable sf::RectangleShape m_rectangle;
-	std::vector<uint8_t> m_sampleShapes;
+	std::vector<std::vector<uint8_t>> m_channelShapes;
 };

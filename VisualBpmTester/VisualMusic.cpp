@@ -10,7 +10,9 @@ constexpr std::int32_t samplerate = 44100;// 22046; 44092; 88185; 176370;
 
 VisualMusic::VisualMusic() :
 	m_file(),
-	m_loopSpan(0, 0) {}
+	m_loopSpan(0, 0),
+	m_samplesCnt(0),
+	m_rectangle(sf::Vector2f(4.0f, 4.0f)) {}
 
 VisualMusic::~VisualMusic() {
 	// We must stop before destroying the file
@@ -77,9 +79,9 @@ void VisualMusic::setLoopPoints(TimeSpan timePoints) {
 	}
 
 	// Round up to the next even sample if needed
-	samplePoints.offset += (getChannelCount() - 1);
+	samplePoints.offset += (getChannelCount() - 1ull);
 	samplePoints.offset -= (samplePoints.offset % getChannelCount());
-	samplePoints.length += (getChannelCount() - 1);
+	samplePoints.length += (getChannelCount() - 1ull);
 	samplePoints.length -= (samplePoints.length % getChannelCount());
 
 	// Validate
@@ -123,7 +125,7 @@ void VisualMusic::setLoopPoints(TimeSpan timePoints) {
 bool VisualMusic::onGetData(Chunk& data) {
 	std::lock_guard lock(m_mutex);
 
-	std::size_t toFill = m_samples.size();
+	std::size_t toFill = samplecnt;
 	sf::Uint64 currentOffset = m_file.getSampleOffset();
 	sf::Uint64 loopEnd = m_loopSpan.offset + m_loopSpan.length;
 
@@ -170,14 +172,17 @@ void VisualMusic::initialize() {
 	m_loopSpan.offset = 0;
 	m_loopSpan.length = m_file.getSampleCount();
 
-	// Resize the internal buffer so that it can contain 1 second of audio samples
-	m_samples.resize(m_file.getSampleRate() * m_file.getChannelCount());
+	// Resize the internal buffer so that it can contain 6 sets of 48000 samples
+	m_samples.resize(samplecnt * m_file.getChannelCount() * 6);
 
 	// Initialize the stream
 	SoundStream::initialize(m_file.getChannelCount(), m_file.getSampleRate());
+
+	m_rtex.create(640, 64);
+	m_sp.setTexture(m_rtex.getTexture(), true);
 }
 
-uint64_t VisualMusic::timeToSamples(sf::Time position) const {
+sf::Uint64 VisualMusic::timeToSamples(sf::Time position) const {
 	// Always ROUND, no unchecked truncation, hence the addition in the numerator.
 	// This avoids most precision errors arising from "samples => Time => samples" conversions
 	// Original rounding calculation is ((Micros * Freq * Channels) / 1000000) + 0.5
@@ -190,7 +195,11 @@ sf::Time VisualMusic::samplesToTime(uint64_t samples) const {
 
 	// Make sure we don't divide by 0
 	if (getSampleRate() != 0 && getChannelCount() != 0)
-		position = sf::microseconds(static_cast<sf::Int64>((samples * 1000000) / (getChannelCount() * getSampleRate())));
+		position = sf::microseconds(static_cast<sf::Int64>((samples * 1000000) / ((sf::Uint64)getChannelCount() * getSampleRate())));
 
 	return position;
+}
+
+void VisualMusic::pushOneChunk() {
+
 }

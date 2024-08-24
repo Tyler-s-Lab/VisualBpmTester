@@ -23,9 +23,9 @@ int main() {
 
 	VisualMusic music;
 
-	//music.openFromFile("../../The Fear.mp3");
+	music.openFromFile("../../The Fear.mp3");
 	//music.openFromFile("../../test.mp3");
-	music.openFromFile("D:\\ProgramData\\CloudMusic_Download\\潘めぐみ,藤田咲,田辺留依 - シカ色デイズ.mp3");
+	//music.openFromFile("D:\\ProgramData\\CloudMusic_Download\\潘めぐみ,藤田咲,田辺留依 - シカ色デイズ.mp3");
 	//music.openFromFile("D:\\ProgramData\\CloudMusic_Download\\Mitchie M,初音ミク - FREELY TOMORROW.flac");
 
 	music.play();

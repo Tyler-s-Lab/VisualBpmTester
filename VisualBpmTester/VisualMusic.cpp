@@ -12,7 +12,6 @@ constexpr std::int32_t samplerate = 44100;// 22046; 44092; 88185; 176370;
 VisualMusic::VisualMusic() :
 	m_file(),
 	m_loopSpan(0, 0),
-	m_pointsPerShape(0),
 	m_rectangle(sf::Vector2f(1.0f, 1.0f)) {}
 
 VisualMusic::~VisualMusic() {
@@ -209,7 +208,8 @@ void VisualMusic::setShowRange(bool followMusic, TimeSpan range) {}
 
 void VisualMusic::draw(sf::RenderTarget& target, sf::RenderStates states) const {
 	uint32_t sampleRate = getSampleRate();
-	uint32_t samplesPerShape = m_pointsPerShape * getChannelCount();
+	uint32_t pointsPerShape = sampleRate / ShapesPerSec;
+	uint32_t samplesPerShape = pointsPerShape * getChannelCount();
 
 	uint32_t delta = sampleRate * 8;
 	delta = delta / samplesPerShape + ((delta % samplesPerShape) ? 1 : 0);
@@ -255,8 +255,8 @@ void VisualMusic::computeSamples() {
 	sf::err() << "Channel Cnt: " << getChannelCount() << std::endl;
 	sf::err() << "Sample Rate: " << getSampleRate() << std::endl;
 
-	m_pointsPerShape = getSampleRate() / 96;
-	uint32_t samplesPerShape = m_pointsPerShape * getChannelCount();
+	uint32_t pointsPerShape = getSampleRate() / ShapesPerSec;
+	uint32_t samplesPerShape = pointsPerShape * getChannelCount();
 	uint64_t totalSampleCnt = m_file.getSampleCount();
 	uint64_t shapeCnt = totalSampleCnt / samplesPerShape + ((totalSampleCnt % samplesPerShape) ? 1 : 0);
 

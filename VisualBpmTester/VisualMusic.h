@@ -20,9 +20,9 @@ public:
 	~VisualMusic();
 
 public:
-	bool openFromFile(const std::string& filename);
-	bool openFromMemory(const void* data, std::size_t sizeInBytes);
-	bool openFromStream(sf::InputStream& stream);
+	[[nodiscard]] bool openFromFile(const std::string& filename);
+	[[nodiscard]] bool openFromMemory(const void* data, std::size_t sizeInBytes);
+	[[nodiscard]] bool openFromStream(sf::InputStream& stream);
 
 	sf::Time getDuration() const;
 
@@ -30,18 +30,18 @@ public:
 	void setLoopPoints(TimeSpan timePoints);
 
 protected:
-	virtual bool onGetData(Chunk& data) override;
+	[[nodiscard]] virtual bool onGetData(Chunk& data) override;
 
 	virtual void onSeek(sf::Time timeOffset) override;
 
-	virtual sf::Int64 onLoop() override;
+	virtual std::optional<std::uint64_t> onLoop() override;
 
 private:
 	void initialize();
 
-	sf::Uint64 timeToSamples(sf::Time position) const;
+	[[nodiscard]] std::int64_t timeToSamples(sf::Time position) const;
 
-	sf::Time samplesToTime(uint64_t samples) const;
+	[[nodiscard]] sf::Time samplesToTime(uint64_t samples) const;
 
 private:
 	sf::InputSoundFile   m_file;     //!< The streamed music file
